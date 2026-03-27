@@ -1,0 +1,42 @@
+@use "tailwindcss";
+
+@theme inline {
+  --color-primary: #1B6D24;
+  --color-primary-container: #CCFFC3;
+  --color-secondary: #636037;
+  --color-secondary-fixed: #EAE4B1;
+  --color-surface: #F9F9F9;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #F3F3F3;
+  --color-surface-container: #EEEEEE;
+  --color-on-surface: #1A1C1C;
+  --color-on-primary: #FFFFFF;
+  --color-on-secondary-fixed: #1E1C00;
+  --color-outline-variant: #C3C8C2;
+
+  --font-display: 'system-ui';
+  --font-headline: 'system-ui';
+  --font-body: 'system-ui';
+
+  --radius-md: 0.75rem;
+  --radius-xl: 1.5rem;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+.card-shadow {
+  box-shadow: rgba(0, 0, 0, 0.25)
+   0px 54px 55px, rgba(0, 0, 0, 0.12)
+    0px -12px 30px, rgba(0, 0, 0, 0.12)
+     0px 4px 6px, rgba(0, 0, 0, 0.17)
+      0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+}
