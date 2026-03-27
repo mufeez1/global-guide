@@ -3,8 +3,14 @@ import Image from "next/image";
 import { ArrowRight, BookOpen, Clock, Heart, Calendar } from "lucide-react";
 import heroImg from "@/assets/images/hero-background.png";
 import quoteIcon from "@/assets/icons/quatation-mark.svg";
+import { Quran, Hadith, Chapter } from 'islam.js';
 
 export default function Home() {
+
+  const quran = new Quran();
+
+  let a: Chapter[] = quran.getAllChapters()
+  console.log(a)
   return (
     <div className="pb-8">
 
@@ -26,10 +32,10 @@ export default function Home() {
             </div>
           </div>
           <div className=" pt-12 rounded-[1.5rem] relative">
-            <div className="rounded-[1rem] -z-10 translate-x-4 -translate-y-4 overflow-hidden shadow-xl">
-              <Image src={heroImg} alt="Hero Background" className="w-full h-auto object-cover rounded-bl-[4rem] rounded-tr-[1.5rem]" priority />
+            <div className="rounded-[1rem] z-10 translate-x-4 translate-y-4 overflow-hidden ">
+              <Image src={heroImg} alt="Hero Background" className="w-full h-auto object-cover " priority />
             </div>
-            <div className="bg-[var(--color-surface-container-low)] absolute p-6 bottom-[-2rem] left-[1.5rem] rounded-[1rem] w-[22rem] shadow-lg card-shadow">
+            <div className="bg-[var(--color-surface-container-low)] absolute p-6 bottom-[4rem] left-[-3.5rem] rounded-[1rem] w-[22rem] shadow-lg card-shadow">
               <Image src={quoteIcon} alt="Quote" className="mb-3 w-5 h-auto opacity-60" />
               <p className="font-display text-2xl italic text-[var(--color-on-surface)] leading-relaxed tracking-[-0.02em]">
                 "And He is with you wherever you are."

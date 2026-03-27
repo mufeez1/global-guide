@@ -1,76 +1,91 @@
-import Link from "next/link";
-import { ArrowLeft, Settings2, Bookmark, PlayCircle, Share2 } from "lucide-react";
+import Sidebar from "./Sidebar";
+import { Settings, PlayCircle } from "lucide-react";
+import { Quran } from "islam.js";
 
-export default function QuranPage() {
+// @ts-ignore - To support both Next.js 14 and 15 Promise resolution
+export default async function QuranPage(props: { searchParams: any }) {
+  // Handle Next.js 15+ promise searchParams natively or fallback for 14
+  const searchParams = await Promise.resolve(props.searchParams);
+  const activeChapterNo = parseInt(searchParams?.chapter || "2");
+  
+  const quran = new Quran();
+  const allChapters = quran.getAllChapters();
+  const activeChapter = quran.getChapterByIndex(activeChapterNo);
+  
+  if (!activeChapter) {
+    return <div className="p-24 text-center">Chapter not found</div>;
+  }
+
+  // Fetch all verses for the active chapter with translation
+  const verses = quran.getVerseRangeWithTranslation(activeChapterNo, 1, activeChapter.numberOfVerses);
+
   return (
-    <div className="pb-24">
-      {/* Header */}
-      <header className="sticky top-[72px] z-40 bg-[var(--color-surface)]/90 backdrop-blur-[20px] py-6 px-8 border-b border-[var(--color-outline-variant)]/20">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-[var(--color-on-surface)] opacity-60 hover:opacity-100 transition-opacity font-body text-sm font-bold uppercase tracking-widest">
-            <ArrowLeft size={16} /> Returns
-          </Link>
-          <div className="text-center">
-             <h1 className="font-display text-2xl text-[var(--color-primary)] font-bold tracking-[-0.01em]">Al-Baqarah</h1>
-             <p className="font-body text-xs text-[var(--color-on-surface)] opacity-50 font-bold uppercase tracking-widest mt-1">Verse 255 • The Cow</p>
+    <div className="flex md:h-[calc(100vh-72px)] bg-[var(--color-surface)] items-start">
+      {/* Left Sidebar (Client Component for search) */}
+      <Sidebar 
+        allChapters={allChapters}
+        activeChapterNo={activeChapterNo}
+      />
+
+      {/* Right Main Content */}
+      <main className="flex-1 w-full bg-[var(--color-surface)] relative overflow-y-auto h-full scroll-smooth pt-16">
+        <div className="max-w-[900px] mx-auto px-8 md:px-16 pb-32">
+          <header className="mb-24">
+            <div className="flex flex-col lg:flex-row justify-between items-start gap-8 border-b border-[var(--color-outline-variant)]/20 pb-16">
+               <div>
+                  <h1 className="font-display text-5xl md:text-6xl text-[var(--color-on-surface)] mb-4 tracking-[-0.02em]">Surah {activeChapter.englishName}</h1>
+                  <p className="text-[var(--color-on-surface)] opacity-60 text-[15px] font-body">{activeChapter.type} • {activeChapter.numberOfVerses} Verses • Juz 1</p>
+               </div>
+               <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <div className="bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)] opacity-80 text-[11px] font-bold px-4 py-2.5 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-[var(--color-surface-container)] transition-colors">
+                     Sahih International <span className="opacity-50 text-[10px]">▼</span>
+                  </div>
+                  <div className="border border-[var(--color-outline-variant)]/30 text-[var(--color-on-surface)] opacity-80 text-[11px] font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 cursor-pointer hover:bg-[var(--color-surface-container-low)] transition-colors">
+                     <Settings size={14} /> Translation
+                  </div>
+               </div>
+            </div>
+
+            <div className="text-center pt-24 pb-12">
+               <h2 className="font-display text-4xl md:text-5xl text-[var(--color-on-surface)] mb-6 leading-loose opacity-90" dir="rtl" >بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</h2>
+               <p className="font-display italic text-[var(--color-on-surface)] opacity-40 text-lg font-medium">In the name of Allah, the Entirely Merciful, the Especially Merciful</p>
+            </div>
+          </header>
+
+          <div className="space-y-16">
+            {verses.map((v, idx) => {
+               const verseNo = idx + 1;
+               const isHighlighted = verseNo === 1; // Highlight the first verse just like the design
+               return (
+                 <div key={verseNo} className={`p-8 md:p-14 rounded-[2rem] transition-colors ${isHighlighted ? 'bg-[#F9F6E8]' : 'hover:bg-[var(--color-surface-container-low)]/50'}`}>
+                    
+                    <div className="flex flex-row-reverse justify-between items-start mb-12 w-full gap-8">
+                       <div className="flex-1 text-right">
+                          <p className="font-display text-[2.5rem] md:text-[2rem] text-[var(--color-on-surface)] leading-[2.2] md:leading-[2.5] inline-block rtl" dir="rtl" style={{  wordSpacing: "0.15em" }}>
+                             {v.verse}
+                          </p>
+                       </div>
+                       <div className="flex items-center gap-4 shrink-0 mt-4">
+                          <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${isHighlighted ? 'bg-white text-[var(--color-primary)] shadow-sm' : 'bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)] opacity-70'}`}>
+                             {verseNo}
+                          </span>
+                       </div>
+                    </div>
+
+                    <div className={`mt-8 relative max-w-2xl ${isHighlighted ? 'pl-8' : 'pt-10'}`}>
+                       {isHighlighted && <div className="absolute left-0 top-2 bottom-0 w-[3px] bg-[var(--color-outline-variant)]/40 rounded-full"></div>}
+                       
+                       <p className="font-body text-[19px] text-[var(--color-on-surface)] opacity-[0.85] leading-[1.8] mb-8">
+                          {v.translation}
+                       </p>
+                       <p className="text-[11px] text-[var(--color-on-surface)] opacity-40 uppercase tracking-widest font-bold">
+                          — SAHIH INTERNATIONAL
+                       </p>
+                    </div>
+                 </div>
+               );
+            })}
           </div>
-          <button className="w-10 h-10 rounded-full bg-[var(--color-surface-container-low)] flex items-center justify-center text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container)] transition-colors">
-             <Settings2 size={18} />
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content - Reading View */}
-      <main className="px-8 max-w-4xl mx-auto mt-12">
-        <div className="bg-[var(--color-surface-container-lowest)] p-12 md:p-16 rounded-[2rem] shadow-[0_12px_32px_-4px_rgba(26,28,28,0.04)] relative">
-           
-           <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-primary)]/5 rounded-bl-[6rem] rounded-tr-[2rem] -z-10"></div>
-           
-           {/* Actions Bar */}
-           <div className="flex justify-between items-center mb-16 border-b border-[var(--color-outline-variant)]/20 pb-6">
-              <span className="w-10 h-10 rounded-full border border-[var(--color-primary)]/20 text-[var(--color-primary)] flex items-center justify-center font-body text-sm font-bold">
-                 255
-              </span>
-              <div className="flex gap-4">
-                 <button className="text-[var(--color-on-surface)] opacity-40 hover:opacity-100 hover:text-[var(--color-primary)] transition-all">
-                    <PlayCircle size={22} />
-                 </button>
-                 <button className="text-[var(--color-on-surface)] opacity-40 hover:opacity-100 hover:text-[var(--color-primary)] transition-all">
-                    <Bookmark size={20} />
-                 </button>
-                 <button className="text-[var(--color-on-surface)] opacity-40 hover:opacity-100 hover:text-[var(--color-primary)] transition-all">
-                    <Share2 size={20} />
-                 </button>
-              </div>
-           </div>
-           
-           {/* Arabic Text */}
-           <div className="mb-12 text-right">
-              <h2 className="font-display text-4xl leading-[2.2] md:leading-[2.2] text-[var(--color-on-surface)] tracking-normal rtl break-words" dir="rtl" style={{ fontFamily: "Amiri, Noto Serif, serif" }}>
-                 ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌۭ وَلَا نَوْمٌۭ ۚ لَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ ۗ مَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَىْءٍۢ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ ۚ وَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ ۖ وَلَا يَـُٔودُهُۥ حِفْظُهُمَا ۚ وَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ
-              </h2>
-           </div>
-
-           {/* Translation */}
-           <div className="space-y-8 bg-[var(--color-surface-container)]/30 p-8 rounded-[1.5rem]">
-              <div>
-                 <p className="font-body text-xs font-bold uppercase tracking-[0.1em] text-[var(--color-primary)] mb-3">Translation (Sahih International)</p>
-                 <p className="font-body text-lg text-[var(--color-on-surface)] opacity-80 leading-relaxed">
-                    Allah - there is no deity except Him, the Ever-Living, the Sustainer of [all] existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is [presently] before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.
-                 </p>
-              </div>
-           </div>
-           
-        </div>
-        
-        {/* Navigation Between Verses */}
-        <div className="flex justify-between items-center mt-12 bg-[var(--color-surface-container-low)] p-4 rounded-full border border-[var(--color-outline-variant)]/20">
-           <button className="flex items-center gap-2 text-[var(--color-on-surface)] opacity-60 hover:opacity-100 font-body text-xs font-bold uppercase tracking-widest transition-opacity px-4 py-2">
-              <ArrowLeft size={16} /> Previous
-           </button>
-           <button className="flex items-center gap-2 text-[var(--color-on-surface)] opacity-60 hover:opacity-100 font-body text-xs font-bold uppercase tracking-widest transition-opacity px-4 py-2">
-              Next <ArrowLeft size={16} className="rotate-180" />
-           </button>
         </div>
       </main>
     </div>
