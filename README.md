@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Global Guide — Islamic Companion
 
-## Getting Started
+Next.js 16 (App Router) app: Quran with Urdu translations, recitation and tafsir; prayer times; hadith; duas and azkar; Hijri calendar; Ramadan timetable; 99 Names; tasbeeh; mosque finder; search. No backend or accounts — personal data stays in the browser (IndexedDB).
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Environment (`.env.local`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_AUDIO_BASE_URL` | Base URL of the full-surah audio bucket (Listen page and the Quran audio bar) |
+| `NEXT_PUBLIC_SITE_URL` | Public origin for canonical URLs, sitemap and robots (defaults to `http://localhost:3000`) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No API keys are needed: every provider used is public.
 
-## Learn More
+## Check
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+npm run typecheck
+npm test             # Node's built-in test runner; remote APIs are mocked
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The service worker (`public/sw.js`) registers only in production builds.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Layout
 
-## Deploy on Vercel
+- `src/lib/services/*` — one adapter per provider (`aladhan`, `quran-cloud`, `quran-foundation`, `hadith`, `ummah-api`, `overpass`, `nominatim`). Each validates and normalises responses; UI never calls `fetch` directly.
+- `src/lib/http.ts` — shared fetch with timeout and readable errors (`ProviderError`).
+- `src/lib/db.ts` — IndexedDB (versioned stores: `cache`, `bookmarks`, `counters`, `tasbeehDaily`, `sessions`, `kv`), export/import, recovery.
+- `src/lib/cache.ts` — `cached()` / `useCached()`: fresh cache → network → stale copy (flagged), never invented data.
+- `src/lib/sources.ts` — source registry (licence, auth, limits, Urdu availability, date checked), shown at `/sources`.
+- `src/lib/prayer.ts`, `src/lib/tasbeeh.ts` — pure logic, covered by `tests/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Server pages (Quran, hadith, duas, names, calendar, search) fetch with Next's data cache. Location-dependent features (prayer times, Ramadan, mosques) run on the client and cache in IndexedDB so they work offline.

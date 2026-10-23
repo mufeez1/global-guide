@@ -1,25 +1,63 @@
 @use "tailwindcss";
 
 @theme inline {
+  --font-display: 'system-ui';
+  --font-headline: 'system-ui';
+  --font-body: 'system-ui';
+  --font-arabic: var(--font-amiri), serif;
+  --font-urdu: var(--font-nastaliq), var(--font-amiri), serif;
+
+  --radius-md: 0.75rem;
+  --radius-xl: 1.5rem;
+}
+
+// Colour tokens live on :root (not @theme) so the dark theme can redefine them.
+:root {
+  color-scheme: light;
   --color-primary: #1B6D24;
   --color-primary-container: #CCFFC3;
   --color-secondary: #636037;
   --color-secondary-fixed: #EAE4B1;
-  --color-surface: #F9F9F9;
+  --color-gold: #8A6D1F;
+  --color-surface: #FAF8F3;
   --color-surface-container-lowest: #FFFFFF;
-  --color-surface-container-low: #F3F3F3;
-  --color-surface-container: #EEEEEE;
+  --color-surface-container-low: #F3F1EA;
+  --color-surface-container: #ECE9E0;
   --color-on-surface: #1A1C1C;
   --color-on-primary: #FFFFFF;
   --color-on-secondary-fixed: #1E1C00;
   --color-outline-variant: #C3C8C2;
+  --color-error: #B3261E;
+  // Deep green for banners with white text; stays dark in both themes.
+  --color-hero: #1B6D24;
 
-  --font-display: 'system-ui';
-  --font-headline: 'system-ui';
-  --font-body: 'system-ui';
+  // Reader preferences, overwritten from localStorage before paint (see layout.tsx).
+  --quran-size: 2.1rem;
+  --quran-leading: 2.2;
+  --urdu-size: 1.25rem;
+}
 
-  --radius-md: 0.75rem;
-  --radius-xl: 1.5rem;
+@mixin dark-tokens {
+  color-scheme: dark;
+  --color-primary: #8AD893;
+  --color-primary-container: #1F4A25;
+  --color-secondary: #CFC99A;
+  --color-secondary-fixed: #E6DDA4;
+  --color-gold: #D9BE6A;
+  --color-surface: #0F1512;
+  --color-surface-container-lowest: #161E19;
+  --color-surface-container-low: #1A231D;
+  --color-surface-container: #222C25;
+  --color-on-surface: #E4E9E3;
+  --color-on-primary: #0B2410;
+  --color-on-secondary-fixed: #1E1C00;
+  --color-outline-variant: #3E4A41;
+  --color-error: #F2B8B5;
+  --color-hero: #1D4F24;
+}
+:root[data-theme="dark"] { @include dark-tokens; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { @include dark-tokens; }
 }
 
 body {
@@ -32,6 +70,31 @@ body {
   box-sizing: border-box;
 }
 
+// One visible focus style everywhere.
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// Readable long-form Arabic and Urdu.
+.quran-ar {
+  font-family: var(--font-arabic);
+  font-size: var(--quran-size);
+  line-height: var(--quran-leading);
+}
+.urdu {
+  font-family: var(--font-urdu);
+  font-size: var(--urdu-size);
+  line-height: 2.3;
+}
+
+[data-hide-en] .reader-en { display: none; }
+
+// Subtle eight-point star lattice used behind headers.
+.pattern-star {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='white' stroke-opacity='0.35' stroke-width='0.8'%3E%3Crect x='14' y='14' width='20' height='20'/%3E%3Crect x='14' y='14' width='20' height='20' transform='rotate(45 24 24)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 48px;
+}
 
 .card-shadow {
   box-shadow: rgba(0, 0, 0, 0.25)
@@ -39,4 +102,19 @@ body {
     0px -12px 30px, rgba(0, 0, 0, 0.12)
      0px 4px 6px, rgba(0, 0, 0, 0.17)
       0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+}
+// Listen page: surah title fades up on track change
+@keyframes listen-fade {
+  from { opacity: 0; transform: translateY(12px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.listen-fade { animation: listen-fade 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .listen-fade { animation: none; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+@media print {
+  nav, footer, .no-print { display: none !important; }
+  body { padding-top: 0 !important; }
 }
