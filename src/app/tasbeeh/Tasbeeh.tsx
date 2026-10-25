@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, Plus, RotateCcw, Trash2, Undo2, Vibrate, Volume2 } from "lucide-react";
+import { FileDown, ImageDown, Loader2, Plus, RotateCcw, Trash2, Undo2, Vibrate, Volume2 } from "lucide-react";
 import { dbAll, dbAllByIndex, dbDelete, dbGet, dbPut } from "@/lib/db";
 import { PRESETS, addDaily, dayKey, increment, newCounter, reset, undo, type Counter, type Daily, type Session } from "@/lib/tasbeeh";
 import { usePref } from "@/lib/settings";
 import { Dialog, toast } from "@/components/client";
 import { Arabic, Empty, ErrorState, Skeleton, btn, btnPrimary, card, input } from "@/components/ui";
 import Select from "@/components/Select";
+import { download, jpegToPdf } from "@/lib/export";
+import { drawHistoryCard } from "./exportCard";
 
 const R = 120;
 const C = 2 * Math.PI * R;
@@ -228,11 +230,26 @@ function History({ refreshKey }: { refreshKey: number }) {
       .catch(() => setData({ today: "", days: [], sessions: [] }));
   }, [refreshKey]);
 
-  const exportHistory = async () => {
-    const blob = new Blob([JSON.stringify({ app: "islamic-companion", kind: "tasbeeh", exportedAt: new Date().toISOString(), data: { counters: await dbAll("counters"), tasbeehDaily: await dbAll("tasbeehDaily"), sessions: await dbAll("sessions") } }, null, 2)], { type: "application/json" });
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `tasbeeh-${dayKey(Date.now())}.json` });
-    a.click();
-    URL.revokeObjectURL(a.href);
+  const [exporting, setExporting] = useState<"png" | "pdf" | null>(null);
+  const exportHistory = async (kind: "png" | "pdf") => {
+    if (!data) return;
+    setExporting(kind);
+    try {
+      const sessions = (await dbAll<Session>("sessions")).sort((a, b) => b.endedAt - a.endedAt);
+      const canvas = await drawHistoryCard(data.days, sessions);
+      const name = `tasbeeh-${dayKey(Date.now())}`;
+      if (kind === "png") {
+        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
+        if (blob) download(blob, `${name}.png`);
+      } else {
+        const jpeg = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.92));
+        if (jpeg) download(new Blob([jpegToPdf(new Uint8Array(await jpeg.arrayBuffer()), canvas.width, canvas.height) as BlobPart], { type: "application/pdf" }), `${name}.pdf`);
+      }
+    } catch {
+      toast("Couldn't create the file. Please try again.");
+    } finally {
+      setExporting(null);
+    }
   };
 
   if (!data) return <Skeleton className="h-48" />;
@@ -260,7 +277,14 @@ function History({ refreshKey }: { refreshKey: number }) {
             ))}
           </ul>
         ) : <div className="mt-3"><Empty>Complete or reset a round to see it here.</Empty></div>}
-        <button type="button" className={`${btn} mt-4 w-full`} onClick={exportHistory}><Download size={16} aria-hidden="true" /> Export history (JSON)</button>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {(["png", "pdf"] as const).map((k) => (
+            <button key={k} type="button" className={btn} disabled={!!exporting} aria-busy={exporting === k} onClick={() => exportHistory(k)}>
+              {exporting === k ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : k === "png" ? <ImageDown size={16} aria-hidden="true" /> : <FileDown size={16} aria-hidden="true" />}
+              {k === "png" ? "Save image" : "Save PDF"}
+            </button>
+          ))}
+        </div>
         <p className="mt-2 text-xs text-[var(--color-on-surface)]/55">Your counts never leave this device unless you export them.</p>
       </section>
     </>

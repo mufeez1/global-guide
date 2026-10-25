@@ -1,10 +1,16 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, Search, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
 import { usePref } from "@/lib/settings";
+
+// Thin bar across the top while a clicked link's page loads; must render inside that <Link>.
+function Pending() {
+  const { pending } = useLinkStatus();
+  return pending ? <span aria-hidden="true" className="nav-progress fixed inset-x-0 top-0 z-[90] h-[3px] bg-[var(--color-primary)]" /> : null;
+}
 
 const PRIMARY = [
   { name: "Quran", href: "/quran" },
@@ -89,12 +95,12 @@ export default function Navigation() {
     <>
       <nav aria-label="Main" className="fixed top-0 left-0 w-full z-50 h-[72px] bg-[var(--color-surface)]/85 backdrop-blur-[20px] border-b border-[var(--color-outline-variant)]/30 px-4 sm:px-8 flex justify-between items-center gap-4">
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-[var(--color-primary)] hover:opacity-80 transition-opacity">
-          The Global Guide
+          The Global Guide<Pending />
         </Link>
         <div className="hidden lg:flex items-center gap-7 text-[var(--color-on-surface)]/75 text-sm uppercase tracking-widest font-semibold font-body">
           {PRIMARY.map((link) => (
             <Link key={link.href} href={link.href} aria-current={active(link.href) ? "page" : undefined} className={linkClass(link.href)}>
-              {link.name}
+              {link.name}<Pending />
             </Link>
           ))}
           <div ref={moreRef} className="relative">
@@ -112,7 +118,7 @@ export default function Navigation() {
                 {MORE.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} aria-current={active(link.href) ? "page" : undefined} className={`block px-3 py-2.5 rounded-xl hover:bg-[var(--color-surface-container-low)] ${active(link.href) ? "text-[var(--color-primary)] font-bold" : "text-[var(--color-on-surface)]"}`}>
-                      {link.name}
+                      {link.name}<Pending />
                     </Link>
                   </li>
                 ))}
@@ -164,7 +170,7 @@ export default function Navigation() {
               aria-current={active(link.href) ? "page" : undefined}
               className={`py-3 text-2xl font-display tracking-[-0.01em] border-b border-[var(--color-outline-variant)]/20 ${active(link.href) ? "text-[var(--color-primary)]" : "text-[var(--color-on-surface)]"}`}
             >
-              {link.name}
+              {link.name}<Pending />
             </Link>
           ))}
         </div>

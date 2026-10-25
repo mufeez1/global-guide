@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Serif, Manrope, Amiri, Noto_Nastaliq_Urdu } from "next/font/google";
 import "./globals.scss";
 import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import Footer, { Dedication } from "@/components/Footer";
 import { OfflineBanner, Toaster } from "@/components/client";
 import ServiceWorker from "@/components/ServiceWorker";
+import ListenAudio from "@/components/ListenAudio";
 
 const notoSerif = Noto_Serif({
   variable: "--font-noto-serif",
@@ -67,10 +68,13 @@ export default function RootLayout({
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[80] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-[var(--color-primary)] focus:text-[var(--color-on-primary)]">
           Skip to content
         </a>
+        <ListenAudio>
         <Navigation />
         <OfflineBanner />
         <main id="main" className="flex-1 shrink-0">{children}</main>
+        <Dedication className="print-dedication hidden print:block mt-8 text-sm" />
         <Footer />
+        </ListenAudio>
         <Toaster />
         <ServiceWorker />
       </body>

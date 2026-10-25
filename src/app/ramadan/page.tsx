@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 export default function RamadanPage() {
   return (
-    <>
-      <PageHeader kicker="Fasting" title={<>Ramadan <span className="text-[var(--color-primary)]">Sehri &amp; Iftar</span></>} intro="Sehri ends at Fajr and Iftar is at Maghrib, calculated for your location with your prayer-time settings." />
+    <div className="ramadan-bg -mt-px pb-4">
+      <div className="no-print"><PageHeader kicker="Fasting" title={<>Ramadan <span className="text-[var(--color-primary)]">Sehri &amp; Iftar</span></>} intro="Sehri ends at Fajr and Iftar is at Maghrib, calculated for your location with your prayer-time settings." /></div>
       <Ramadan />
-    </>
+    </div>
   );
 }

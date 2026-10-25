@@ -3,7 +3,7 @@
 
 export type SourceId =
   | "aladhan" | "alquran-cloud" | "tanzil" | "islamic-network-audio" | "quran-com" | "hadith-api"
-  | "ummah-api" | "hisn-muslim" | "islam-js" | "overpass" | "osm-tiles" | "nominatim" | "r2-audio";
+  | "ummah-api" | "hisn-muslim" | "islam-js" | "overpass" | "osm-tiles" | "nominatim" | "r2-audio" | "quranicaudio" | "mp3quran";
 
 export type Source = {
   name: string;
@@ -165,5 +165,29 @@ export const SOURCES: Record<SourceId, Source> = {
     urdu: "Audio",
     audio: "Streaming",
     checked: CHECKED,
+  },
+  quranicaudio: {
+    name: "QuranicAudio (Quran.com)",
+    url: "https://quranicaudio.com/",
+    data: "Full-surah recitations: Alafasy, Abdul Basit, Sudais, Husary, Minshawi, Rifai, Shatri",
+    auth: "None",
+    rateLimit: "Not published",
+    attribution: "Credit the reciter and QuranicAudio",
+    license: "Streaming only; no redistribution rights verified",
+    urdu: "Not applicable (Arabic recitation)",
+    audio: "Streaming",
+    checked: "2026-10-25",
+  },
+  mp3quran: {
+    name: "MP3Quran",
+    url: "https://mp3quran.net/",
+    data: "Full-surah recitations: Shuraim, Maher al-Muaiqly, Yasser ad-Dossari",
+    auth: "None",
+    rateLimit: "Not published",
+    attribution: "Credit the reciter and MP3Quran",
+    license: "Streaming only; no redistribution rights verified",
+    urdu: "Not applicable (Arabic recitation)",
+    audio: "Streaming",
+    checked: "2026-10-25",
   },
 };

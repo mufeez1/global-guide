@@ -3,7 +3,7 @@ import Image from "next/image";
 import { ArrowRight, BookOpen, Clock, Heart, Headphones, ScrollText, Sparkles, CalendarDays, Moon, Hash, MapPin, Search } from "lucide-react";
 import { Quran } from "islam.js";
 import heroImg from "@/assets/images/hero-background.png";
-import { RECITERS, SURAHS } from "@/lib/audio";
+import { ALBUMS, RECITERS, SURAHS } from "@/lib/audio";
 import { getDuas } from "@/lib/services/ummah-api";
 import { gToH } from "@/lib/services/aladhan";
 import { Arabic, Attribution } from "@/components/ui";
@@ -184,7 +184,7 @@ export default async function Home() {
               <div className="relative">
                 <Headphones size={28} className="text-[var(--color-secondary-fixed)]" aria-hidden="true" />
                 <h3 className="mt-6 font-display text-3xl">Listen</h3>
-                <p className="mt-2 text-white/75">Audio by {Object.values(RECITERS).join(" and ")}, in an immersive player.</p>
+                <p className="mt-2 text-white/75">Quran tilawat by {ALBUMS.filter((a) => a.kind === "tilawat").length} renowned qaris and Urdu tafseer by {Object.values(RECITERS).join(" and ")}, in an immersive player.</p>
               </div>
               <span className="relative mt-8 inline-flex items-center gap-2 font-semibold text-[var(--color-secondary-fixed)]">
                 Open player <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />

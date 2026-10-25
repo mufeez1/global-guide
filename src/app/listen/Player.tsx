@@ -1,31 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Search, AudioLines } from "lucide-react";
+import Link from "next/link";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Search, AudioLines, ArrowLeft } from "lucide-react";
 import Visualizer from "./Visualizer";
-import { RECITERS, SURAHS, audioUrl } from "@/lib/audio";
+import { ALBUMS, SURAHS } from "@/lib/audio";
+import { useListen } from "@/components/ListenAudio";
 import Select from "@/components/Select";
 
 const fmt = (s: number) =>
   Number.isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00";
 
 export default function Player({ initialChapter, initialReciter }: { initialChapter: number; initialReciter: string }) {
-  const [chapter, setChapter] = useState(initialChapter);
-  const [reciter, setReciter] = useState(initialReciter);
-  const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [error, setError] = useState(false);
-  // The analyser needs CORS headers on the bucket. Play plainly by default and only switch to a CORS
-  // request once a HEAD check passes; otherwise the visualizer uses a gentle pulse.
-  const [cors, setCors] = useState(false);
+  const l = useListen();
+  const { playing, loading, error, time, duration, volume, analyserRef, playingRef, toggle, go } = l;
+  // Before the shared player has picked up this page's reciter, show the requested one.
+  const reciter = l.reciter || initialReciter;
+  const chapter = l.reciter ? l.chapter : initialChapter;
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const playingRef = useRef(false);
-  const resumeRef = useRef(false);
+  // Take the reciter and surah from the URL (a no-op when they're already playing), and hide the
+  // mini player while this full player is on screen.
+  useEffect(() => {
+    l.select(initialReciter, initialChapter);
+    l.setOnPlayer(true);
+    return () => l.setOnPlayer(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialReciter, initialChapter]);
 
   const [query, setQuery] = useState("");
   const listRef = useRef<HTMLUListElement>(null);
@@ -44,51 +44,10 @@ export default function Player({ initialChapter, initialReciter }: { initialChap
   }, [chapter]);
 
   const surah = SURAHS[chapter - 1];
-  const src = audioUrl(reciter, chapter);
 
   useEffect(() => {
-    window.history.replaceState(null, "", `/listen?chapter=${chapter}&reciter=${reciter}`);
-  }, [chapter, reciter]);
-
-  // One-time check: does the bucket send CORS headers? Only switch while nothing is playing,
-  // since switching remounts the audio element.
-  useEffect(() => {
-    fetch(src, { method: "HEAD" })
-      .then((r) => { if (r.ok && audioRef.current?.paused) setCors(true); })
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // New track: keep playing if we were playing.
-  useEffect(() => {
-    if (resumeRef.current) audioRef.current?.play().catch(() => {});
-  }, [src, cors]);
-
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
-
-  const toggle = async () => {
-    const audio = audioRef.current!;
-    if (!audio.paused) return audio.pause();
-    if (cors && !analyserRef.current) {
-      const ctx = new AudioContext();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.8;
-      ctx.createMediaElementSource(audio).connect(analyser);
-      analyser.connect(ctx.destination);
-      analyserRef.current = analyser;
-    }
-    await (analyserRef.current?.context as AudioContext | undefined)?.resume();
-    setLoading(true);
-    audio.play().catch(() => setLoading(false));
-  };
-
-  const go = (n: number) => {
-    resumeRef.current = playingRef.current;
-    setChapter(((n - 1 + 114) % 114) + 1);
-  };
+    if (l.reciter) window.history.replaceState(null, "", `/listen?chapter=${chapter}&reciter=${l.reciter}`);
+  }, [chapter, l.reciter]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -155,35 +114,21 @@ export default function Player({ initialChapter, initialReciter }: { initialChap
       <div className="relative flex-1 min-w-0 flex flex-col">
       <Visualizer analyserRef={analyserRef} playingRef={playingRef} />
 
-      <audio
-        key={String(cors)}
-        ref={audioRef}
-        src={src}
-        crossOrigin={cors ? "anonymous" : undefined}
-        preload="metadata"
-        onLoadStart={() => { setTime(0); setError(false); }}
-        onPlay={() => { playingRef.current = true; setPlaying(true); }}
-        onPlaying={() => setLoading(false)}
-        onWaiting={() => setLoading(true)}
-        onPause={() => { playingRef.current = false; setPlaying(false); setLoading(false); }}
-        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onEnded={() => { resumeRef.current = true; go(chapter + 1); }}
-        onError={() => { setLoading(false); setError(true); }}
-      />
 
-      {/* Reciter */}
-      <div className="relative z-10 flex justify-center gap-2 pt-8 px-4" role="group" aria-label="Reciter">
-        {Object.entries(RECITERS).map(([slug, label]) => (
-          <button
-            key={slug}
-            onClick={() => { resumeRef.current = playingRef.current; setReciter(slug); }}
-            aria-pressed={slug === reciter}
-            className={`text-[11px] font-bold uppercase tracking-widest px-5 py-3 rounded-full backdrop-blur-md transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#EAE4B1] ${slug === reciter ? "bg-[#EAE4B1] text-[#1E1C00]" : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/10"}`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Back to albums + reciter switch */}
+      <div className="relative z-10 flex items-center justify-between gap-3 pt-6 px-4 md:px-8">
+        <Link href="/listen" className="inline-flex items-center gap-2 min-h-11 px-4 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-semibold text-white/80 hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-[#EAE4B1]">
+          <ArrowLeft size={16} aria-hidden="true" /> All reciters
+        </Link>
+        <Select
+          label="Reciter"
+          hideLabel
+          className="w-56 md:w-72"
+          buttonClassName="w-full min-h-11 flex items-center gap-1 bg-white/5 border border-white/10 backdrop-blur-md rounded-full px-4 text-sm font-semibold text-[#EAE4B1] text-left cursor-pointer"
+          value={reciter}
+          onChange={(slug) => l.select(slug, chapter)}
+          options={ALBUMS.map((a) => ({ value: a.slug, label: `${a.name} · ${a.style.split(" · ")[0]}`, group: a.kind === "tafseer" ? "Urdu Tafseer" : "Quran Tilawat" }))}
+        />
       </div>
 
       {/* Title, centred over the sphere */}
@@ -197,7 +142,7 @@ export default function Player({ initialChapter, initialReciter }: { initialChap
         {surah.meaning && <p className="mt-2 text-white/60 font-body">{surah.meaning}</p>}
         {error && (
           <p role="alert" className="mt-4 text-sm text-red-300 pointer-events-auto">
-            Couldn&apos;t load this recitation. <button className="underline cursor-pointer" onClick={() => { setError(false); audioRef.current?.load(); }}>Retry</button>
+            Couldn&apos;t load this recitation. <button className="underline cursor-pointer" onClick={l.retry}>Retry</button>
           </p>
         )}
       </div>
@@ -213,7 +158,7 @@ export default function Player({ initialChapter, initialReciter }: { initialChap
               max={duration || 0}
               step={1}
               value={time}
-              onChange={(e) => { audioRef.current!.currentTime = +e.target.value; setTime(+e.target.value); }}
+              onChange={(e) => l.seek(+e.target.value)}
               aria-label="Seek"
               className="flex-1 accent-[#EAE4B1] cursor-pointer"
             />
@@ -249,12 +194,12 @@ export default function Player({ initialChapter, initialReciter }: { initialChap
             </div>
 
             <div className="w-28 md:w-40 flex items-center gap-2 justify-end">
-              <button onClick={() => setVolume(volume ? 0 : 1)} aria-label={volume ? "Mute" : "Unmute"} className="p-2 text-white/70 hover:text-white cursor-pointer">
+              <button onClick={() => l.setVolume(volume ? 0 : 1)} aria-label={volume ? "Mute" : "Unmute"} className="p-2 text-white/70 hover:text-white cursor-pointer">
                 {volume ? <Volume2 size={18} /> : <VolumeX size={18} />}
               </button>
               <input
                 type="range" min={0} max={1} step={0.05} value={volume}
-                onChange={(e) => setVolume(+e.target.value)}
+                onChange={(e) => l.setVolume(+e.target.value)}
                 aria-label="Volume"
                 className="hidden md:block w-20 accent-[#EAE4B1] cursor-pointer"
               />
